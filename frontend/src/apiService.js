@@ -1,6 +1,6 @@
 // --- SERVICE LOGIC (FASTAPI INTEGRATION) ---
 // Base URL for the FastAPI backend, assuming it runs on localhost:8000
-const MOCK_API_BASE = 'http://localhost:8000/api/v1';
+const MOCK_API_BASE = 'http://127.0.0.1:8000/docs#';
 
 /**
  * Calls the FastAPI /evaluate endpoint to run the Fuzzy Logic system.
