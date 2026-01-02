@@ -1,169 +1,157 @@
 import React from 'react';
-import { Activity, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 /**
- * CONFIGURATION FOR POLYGONS
- * Maps your Python fuzz.trimf logic to SVG coordinates (0-300 width)
- * Y-Axis: 10 is Top (Peak), 100 is Bottom (Base)
+ * 1. EXPORTED CONFIGURATION
+ * Note: Colors now map to gradient IDs defined in the component below.
  */
-const GRAPH_CONFIG = {
+export const GRAPH_CONFIG = {
     attendance: [
-        { points: "0,10 0,10 150,100 0,100", color: "#ef4444", label: "LOW" },
-        { points: "75,100 150,10 225,100", color: "#eab308", label: "MEDIUM" },
-        { points: "150,100 300,10 300,100 300,100", color: "#22c55e", label: "HIGH" }
+        { points: "0,10 0,10 150,100 0,100", color: "#ef4444", id: "red", label: "LOW" },
+        { points: "75,100 150,10 225,100", color: "#eab308", id: "yellow", label: "MEDIUM" },
+        { points: "150,100 300,10 300,100 300,100", color: "#22c55e", id: "green", label: "HIGH" }
     ],
     test: [
-        { points: "0,10 0,10 150,100 0,100", color: "#ef4444", label: "LOW" },
-        { points: "90,100 180,10 240,100", color: "#eab308", label: "MEDIUM" },
-        { points: "210,100 300,10 300,100 300,100", color: "#22c55e", label: "HIGH" }
+        { points: "0,10 0,10 150,100 0,100", color: "#ef4444", id: "red", label: "LOW" },
+        { points: "90,100 180,10 240,100", color: "#eab308", id: "yellow", label: "MEDIUM" },
+        { points: "210,100 300,10 300,100 300,100", color: "#22c55e", id: "green", label: "HIGH" }
     ],
     assignment: [
-        { points: "0,10 0,10 150,100 0,100", color: "#ef4444", label: "LOW" },
-        { points: "90,100 180,10 240,100", color: "#eab308", label: "MEDIUM" },
-        { points: "210,100 300,10 300,100 300,100", color: "#22c55e", label: "HIGH" }
+        { points: "0,10 0,10 150,100 0,100", color: "#ef4444", id: "red", label: "LOW" },
+        { points: "90,100 180,10 240,100", color: "#eab308", id: "yellow", label: "MEDIUM" },
+        { points: "210,100 300,10 300,100 300,100", color: "#22c55e", id: "green", label: "HIGH" }
     ],
-    // OUTPUT: Weak, Average, Good, Excellent
+    ethics: [
+        { points: "0,10 0,10 150,100 0,100", color: "#ef4444", id: "red", label: "LOW" },
+        { points: "75,100 150,10 225,100", color: "#eab308", id: "yellow", label: "MEDIUM" },
+        { points: "150,100 300,10 300,100 300,100", color: "#22c55e", id: "green", label: "HIGH" }
+    ],
+    cognitive: [
+        { points: "0,10 0,10 150,100 0,100", color: "#ef4444", id: "red", label: "LOW" },
+        { points: "75,100 150,10 225,100", color: "#eab308", id: "yellow", label: "MEDIUM" },
+        { points: "150,100 300,10 300,100 300,100", color: "#22c55e", id: "green", label: "HIGH" }
+    ],
     performance: [
-        { points: "0,10 0,10 90,100 0,100", color: "#ef4444", label: "WEAK" },         
-        { points: "60,100 135,10 210,100", color: "#eab308", label: "AVERAGE" },           
-        { points: "150,100 225,10 270,100", color: "#3b82f6", label: "GOOD" },         
-        { points: "240,100 300,10 300,100 300,100", color: "#22c55e", label: "EXCELLENT" }   
+        { points: "0,10 0,10 120,100 0,100", color: "#ef4444", id: "red", label: "WEAK" },        
+        { points: "105,100 150,10 195,100", color: "#eab308", id: "yellow", label: "AVG" },          
+        { points: "180,100 225,10 255,100", color: "#3b82f6", id: "blue", label: "GOOD" },        
+        { points: "240,100 300,10 300,100 300,100", color: "#22c55e", id: "green", label: "EXC" }   
     ]
 };
 
-const MembershipGraph = ({ title, value, config, unit = "%" }) => {
-    
-    // Map 0-100 input to 0-300 SVG width
+/**
+ * 2. EXPORTED SINGLE GRAPH COMPONENT
+ */
+export const MembershipGraph = ({ title, value, config, unit = "%", style = {}, className = "" }) => {
     const currentX = (value / 100) * 300;
 
     return (
-        <div style={{ marginBottom: '24px', background: '#45295a59', padding: '16px', borderRadius: '12px', border: '1px solid #334155' }}>
-            {/* 1. Header: Title and Value Box */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
-                <span style={{ color: '#e2e8f0', fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <div className={`graph-container ${className}`} style={style}>
+            <div className="graph-header">
+                <span className="graph-title">
                     {title}
                 </span>
-                <div style={{ background: '#334155', padding: '4px 12px', borderRadius: '6px', color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                <div className="graph-value-badge">
                     {value}{unit}
                 </div>
             </div>
 
-            {/* 2. LEGEND (New Addition) */}
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid #334155' }}>
+            <div className="graph-legend">
                 {config.map((item, index) => (
-                    <div key={index} style={{ display: 'flex', alignItems: 'center' }}>
-                        {/* Color Dot */}
-                        <div style={{ 
-                            width: '8px', 
-                            height: '8px', 
-                            borderRadius: '50%', 
-                            backgroundColor: item.color,
-                            marginRight: '6px'
-                        }} />
-                        {/* Label Text */}
-                        <span style={{ fontSize: '0.7rem', fontWeight: '600', color: '#ffffffff' }}>
-                            {item.label}
-                        </span>
+                    <div key={index} className="legend-item">
+                        <div className="legend-dot" style={{ backgroundColor: item.color, boxShadow: `0 0 6px ${item.color}` }} />
+                        <span className="legend-label">{item.label}</span>
                     </div>
                 ))}
             </div>
 
-            {/* 3. Graph Area (Polygons Only) */}
-            <div style={{ position: 'relative', height: '150px', width: '100%' }}>
-                <svg viewBox="0 0 300 100" preserveAspectRatio="none" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-                    
-                    {/* Base Line */}
-                    <line x1="0" y1="100" x2="300" y2="100" stroke="#475569" strokeWidth="2" />
+            <div className="graph-svg-wrapper">
+                <svg viewBox="0 0 300 100" preserveAspectRatio="none" className="graph-svg">
+                    {/* --- DEFINITIONS FOR GRADIENTS --- */}
+                    <defs>
+                        {/* Red Gradient */}
+                        <linearGradient id="grad-red" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#ef4444" stopOpacity="0.6" />
+                            <stop offset="100%" stopColor="#ef4444" stopOpacity="0.05" />
+                        </linearGradient>
+                        {/* Yellow Gradient */}
+                        <linearGradient id="grad-yellow" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#eab308" stopOpacity="0.6" />
+                            <stop offset="100%" stopColor="#eab308" stopOpacity="0.05" />
+                        </linearGradient>
+                        {/* Green Gradient */}
+                        <linearGradient id="grad-green" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#22c55e" stopOpacity="0.6" />
+                            <stop offset="100%" stopColor="#22c55e" stopOpacity="0.05" />
+                        </linearGradient>
+                        {/* Blue Gradient */}
+                        <linearGradient id="grad-blue" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.6" />
+                            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.05" />
+                        </linearGradient>
+                    </defs>
 
-                    {/* Render Polygons dynamically from Config */}
+                    {/* Background Axis Line */}
+                    <line x1="0" y1="100" x2="300" y2="100" stroke="rgba(255,255,255,0.2)" strokeWidth="2" />
+                    
+                    {/* Render Shapes */}
                     {config.map((shape, index) => (
                         <g key={index}>
+                            {/* Fill with Gradient */}
                             <polygon 
                                 points={shape.points} 
-                                fill={shape.color} 
-                                fillOpacity="0.2" 
+                                fill={`url(#grad-${shape.id})`} 
                                 stroke={shape.color} 
                                 strokeWidth="2"
+                                strokeLinejoin="round"
                             />
                         </g>
                     ))}
-
-                    {/* Crisp Value Line (Dashed Vertical Line) */}
-                    <line 
-                        x1={currentX} y1="0" 
-                        x2={currentX} y2="100" 
-                        stroke="white" 
-                        strokeWidth="1.5" 
-                        strokeDasharray="5,5" 
-                    />
-                    {/* White Dot at bottom of line */}
-                    <circle cx={currentX} cy="100" r="4" fill="white" stroke="#1e293b" strokeWidth="2" />
                     
+                    {/* Current Value Indicator Line (Dashed) */}
+                    <line 
+                        x1={currentX} y1="0" x2={currentX} y2="100" 
+                        stroke="white" strokeWidth="2" strokeDasharray="4,4" opacity="0.8" 
+                    />
+                    
+                    {/* Current Value Target Dot (Ring style) */}
+                    <circle cx={currentX} cy="100" r="5" fill="#3c1361" stroke="white" strokeWidth="2.5" />
                 </svg>
             </div>
         </div>
     );
 };
 
-const FuzzyGraph = ({ inputs, result }) => {
+/**
+ * 3. MAIN OUTPUT GRAPH
+ */
+const FuzzyOutputGraph = ({ result }) => {
     const finalScore = result?.fuzzy_score || 0;
     const finalLevel = result?.performance_level || "---";
 
     return (
-        <div className="card-base" style={{ padding: '0', overflow: 'hidden', backgroundColor: '#ceb9d4ff' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0' }}>
-                
-                {/* INPUT LAYER */}
-                <div style={{ padding: '24px', borderRight: '1px solid #ceb9d4ff' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', color: '#52057b' }}>
-                        <Activity size={18} style={{ marginRight: '8px' }} />
-                        <h3 style={{ fontSize: '0.9rem', fontWeight: '800', textTransform: 'uppercase' }}>Input Layer</h3>
-                    </div>
-
-                    <MembershipGraph 
-                        title="Attendance" 
-                        value={inputs.attendance} 
-                        config={GRAPH_CONFIG.attendance}
-                    />
-                    <MembershipGraph 
-                        title="Test Score" 
-                        value={inputs.test_score} 
-                        config={GRAPH_CONFIG.test}
-                    />
-                    <MembershipGraph 
-                        title="Assignment Score" 
-                        value={inputs.assignment_score} 
-                        config={GRAPH_CONFIG.assignment}
-                    />
-                </div>
-
-                {/* OUTPUT LAYER */}
-                <div style={{ padding: '24px', backgroundColor: '#ceb9d4ff' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', color: '#52057b' }}>
-                        <ArrowRight size={18} style={{ marginRight: '8px' }} />
-                        <h3 style={{ fontSize: '0.9rem', fontWeight: '800', textTransform: 'uppercase' }}>Output Layer</h3>
-                    </div>
-
-                    {/* Result Box */}
-                    <div style={{ marginTop: '32px', padding: '20px', background: '#52057b39', borderRadius: '8px', borderLeft: '4px solid #52057b' }}>
-                        <div style={{ marginTop: '16px' }}>
-                            <span style={{ color: '#52057b', fontSize: '1.5rem', fontWeight: '900' }}>
-                                {finalLevel}
-                            </span>
-                        </div>
-                    </div>
-                    <br/>
-                    
-                    {/* Performance Graph with 4 Variables */}
-                    <MembershipGraph 
-                        title="Performance Prediction" 
-                        value={finalScore} 
-                        config={GRAPH_CONFIG.performance}
-                    />
-                </div>
+        <div>
+             <div className="output-section-header">
+                <ArrowRight size={30} style={{ marginRight: '8px' }} />
+                <h3>Output Layer</h3>
             </div>
+
+            {/* Linguistic Value Box */}
+             <div className="linguistic-result-box">
+                <span className="linguistic-result-text">
+                    {finalLevel}
+                </span>
+            </div>
+
+            {/* Graph Component */}
+            <MembershipGraph 
+                title="Student Performance Score" 
+                value={finalScore} 
+                config={GRAPH_CONFIG.performance}
+                className="graph-container-output"
+            />
         </div>
     );
 };
 
-export default FuzzyGraph;
+export default FuzzyOutputGraph;

@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ChevronDown, BarChart3, Bot, Send, Download, RefreshCw, Loader2, MessageSquare } from 'lucide-react';
-import FuzzyGraph from "./ui/FuzzyGraph";
+import React, { useState, useEffect, useCallback } from 'react';
+import { ChevronDown, BarChart3, Bot, Send, Download, RefreshCw, Loader2, MessageSquare, Settings2, GraduationCap, Brain, ShieldCheck, Clock, BookOpen, Sparkles, FileText, Activity } from 'lucide-react';
+import FuzzyOutputGraph, { MembershipGraph, GRAPH_CONFIG } from "./ui/FuzzyGraph";
+import ActiveRulesList from "./ui/ActiveRulesList";
+import './App.css';
 
-// --- SERVICE LOGIC (FASTAPI INTEGRATION - Integrated into this file) ---
+// --- SERVICE LOGIC (FASTAPI INTEGRATION) ---
 const MOCK_API_BASE = 'http://localhost:8000/api/v1';
-//chikll
-/**
- * Calls the FastAPI /evaluate endpoint to run the Fuzzy Logic system.
- */
+
 const callEvaluate = async (inputs) => {
     const response = await fetch(`${MOCK_API_BASE}/evaluate`, {
         method: 'POST',
@@ -22,9 +21,6 @@ const callEvaluate = async (inputs) => {
     return response.json();
 };
 
-/**
- * Calls the FastAPI /suggestion endpoint to get AI feedback.
- */
 const callGetSuggestion = async (inputs) => {
     const response = await fetch(`${MOCK_API_BASE}/suggestion`, {
         method: 'POST',
@@ -39,9 +35,6 @@ const callGetSuggestion = async (inputs) => {
     return response.json();
 };
 
-/**
- * Calls the FastAPI /chat endpoint to talk to the Lecturer LLM.
- */
 const callChatWithLecturer = async (payload) => {
     const response = await fetch(`${MOCK_API_BASE}/chat`, {
         method: 'POST',
@@ -56,23 +49,22 @@ const callChatWithLecturer = async (payload) => {
     return response.json();
 };
 
-/**
- * Triggers the FastAPI /report/download endpoint (GET request).
- */
 const callDownloadReport = (inputs) => {
     const params = new URLSearchParams(inputs).toString();
-    // This uses window.open to initiate a file download in a new tab/window
     window.open(`${MOCK_API_BASE}/report/download?${params}`, '_blank');
 };
 
+const PALETTE = {
+    darkest: '#3c1361',
+    dark:    '#52307c',
+    medium:  '#7c5295',
+    light:   '#bca0dc',
+    white:   '#ffffff',
+    error:   '#fee2e2',
+    errorTx: '#991b1b'
+};
 
-// --- Global Constants (for colors in JS) ---
-const PRIMARY_COLOR = '#BC6FF1';
-const SECONDARY_COLOR = '#892CDC';
-const DARK_ACCENT = '#52057B';
-
-
-// --- HOMEPAGE COMPONENTS ---
+// --- COMPONENTS ---
 
 const FlipText = ({ words }) => {
     const [index, setIndex] = useState(0);
@@ -87,7 +79,7 @@ const FlipText = ({ words }) => {
             }, 3000); 
 
             return () => clearTimeout(fadeTimeout);
-        }, 3500); // Total cycle time
+        }, 3500); 
 
         return () => clearInterval(interval);
     }, [words.length]);
@@ -95,20 +87,18 @@ const FlipText = ({ words }) => {
     const displayWord = words[index];
     const fadeClass = fade ? 'flip-text-fade-in' : 'flip-text-fade-out';
 
-    return (
-        <span className={`flip-text-word ${fadeClass}`} style={{ color: PRIMARY_COLOR }}>
-            {displayWord}
-        </span>
-    );
+    return <span className={`flip-text-word ${fadeClass}`}>{displayWord}</span>;
 };
 
-// --- EVALUATION COMPONENTS ---
-
-const InputSlider = ({ label, value, onChange, name }) => (
+// UPDATED: Added 'icon' prop to render icons next to label
+const InputSlider = ({ label, value, onChange, name, icon: Icon }) => (
     <div className="input-slider-container">
         <label htmlFor={name} className="input-slider-label">
-            {label}
-            <span className="input-slider-value">{value}%</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {Icon && <Icon size={16} color={PALETTE.medium} />}
+                {label}
+            </span>
+            <span className="input-slider-val">{value}%</span>
         </label>
         <input
             type="range"
@@ -120,16 +110,14 @@ const InputSlider = ({ label, value, onChange, name }) => (
             value={value}
             onChange={onChange}
             className="input-slider"
-            // Dynamic background fill for interactivity (must be inline)
             style={{
-                background: `linear-gradient(to right, ${PRIMARY_COLOR} 0%, ${PRIMARY_COLOR} ${value}%, #e5e7eb ${value}%, #e5e7eb 100%)`
+                background: `linear-gradient(to right, ${PALETTE.medium} 0%, ${PALETTE.medium} ${value}%, ${PALETTE.light} ${value}%, ${PALETTE.light} 100%)`
             }}
         />
     </div>
 );
 
-const EvaluationForm = ({ onEvaluate, isLoading, inputs, setInputs }) => {
-    
+const EvaluationForm = ({ onEvaluate, isLoading, inputs, setInputs, graphConfig }) => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setInputs(prev => ({ ...prev, [name]: parseFloat(value) }));
@@ -140,44 +128,62 @@ const EvaluationForm = ({ onEvaluate, isLoading, inputs, setInputs }) => {
         onEvaluate(inputs);
     };
 
+    const graphStyle = { 
+        marginTop: 0, 
+        borderTopLeftRadius: 0, 
+        borderTopRightRadius: 0, 
+        borderTop: 'none', 
+        backgroundColor: PALETTE.dark, 
+        padding: '16px', 
+        marginBottom: 0,
+        borderBottomLeftRadius: '12px', 
+        borderBottomRightRadius: '12px'
+    };
+
     return (
-        <div className="card-base form-card">
-            <h2 className="font-bold card-title" style={{ color: 'black', display: 'flex', alignItems: 'center' }}>
-                <BarChart3 style={{ width: '24px', height: '24px', marginRight: '8px', color: SECONDARY_COLOR }} />
-                Fuzzy Logic Evaluation
+        <div>
+            {/* UPDATED: Removed centering, title is now left-aligned */}
+            <h2 className="font-bold card-title form-header" style={{ marginBottom: '32px' }}>
+                <Settings2 style={{ width: '24px', height: '24px', marginRight: '12px' }} />
+                Input Parameters
             </h2>
             <form onSubmit={handleSubmit}>
-                <InputSlider
-                    label="Attendance Percentage"
-                    name="attendance"
-                    value={inputs.attendance}
-                    onChange={handleChange}
-                />
-                <InputSlider
-                    label="Test Score Percentage"
-                    name="test_score"
-                    value={inputs.test_score}
-                    onChange={handleChange}
-                />
-                <InputSlider
-                    label="Assignment Score Percentage"
-                    name="assignment_score"
-                    value={inputs.assignment_score}
-                    onChange={handleChange}
-                />
-                <button
-                    type="submit"
-                    className="submit-button font-semibold"
-                    disabled={isLoading}
-                >
-                    {isLoading ? (
-                        <>
-                            <Loader2 style={{ width: '20px', height: '20px', marginRight: '8px' }} className="animate-spin" /> Calculating...
-                        </>
-                    ) : (
-                        "Run Fuzzy Evaluation"
-                    )}
-                </button>
+                <div className="inputs-grid">
+                    {/* UPDATED: Passed specific icons to each InputSlider */}
+                    <div className="parameter-card">
+                        <InputSlider label="Attendance" icon={Clock} name="attendance" value={inputs.attendance} onChange={handleChange} />
+                        <MembershipGraph title="Attendance" value={inputs.attendance} config={graphConfig.attendance} style={graphStyle} />
+                    </div>
+                    <div className="parameter-card">
+                        <InputSlider label="Test Score" icon={FileText} name="test_score" value={inputs.test_score} onChange={handleChange} />
+                        <MembershipGraph title="Test Score" value={inputs.test_score} config={graphConfig.test} style={graphStyle} />
+                    </div>
+                    <div className="parameter-card">
+                        <InputSlider label="Assignment" icon={BookOpen} name="assignment_score" value={inputs.assignment_score} onChange={handleChange} />
+                        <MembershipGraph title="Assignment" value={inputs.assignment_score} config={graphConfig.assignment} style={graphStyle} />
+                    </div>
+                    <div className="parameter-card">
+                        <InputSlider label="Ethics" icon={ShieldCheck} name="ethics" value={inputs.ethics} onChange={handleChange} />
+                        <MembershipGraph title="Ethics" value={inputs.ethics} config={graphConfig.ethics} style={graphStyle} />
+                    </div>
+                    <div className="parameter-card">
+                        <InputSlider label="Cognitive & Professionalism" icon={Brain} name="cognitive" value={inputs.cognitive} onChange={handleChange} />
+                        <MembershipGraph title="Cognitive & Professionalism" value={inputs.cognitive} config={graphConfig.cognitive} style={graphStyle} />
+                    </div>
+                </div>
+
+                <div className="submit-btn-container" style={{ marginTop: '32px' }}>
+                    <button
+                        type="submit"
+                        className="submit-button font-semibold"
+                        disabled={isLoading}
+                        style={{ padding: '16px 64px', fontSize: '1.1rem', width: '100%' }}
+                    >
+                        {isLoading ? (
+                            <> <Loader2 style={{ width: '24px', height: '24px', marginRight: '8px' }} className="animate-spin" /> Calculating... </>
+                        ) : ( "Run Evaluation" )}
+                    </button>
+                </div>
             </form>
         </div>
     );
@@ -194,68 +200,58 @@ const ResultsDisplay = ({ result, onGetSuggestion, onDownloadReport, isLoading, 
         }
     };
 
-    if (!result) return <div className="card-base text-center result-placeholder">Enter scores and run evaluation to see results.</div>;
+    if (!result) return null;
+
+    // Helper style for icon alignment in metrics
+    const labelStyle = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '4px' };
+    const iconSize = 14;
 
     return (
-        <div className="card-base results-card">
-            <h3 className="font-bold card-title" style={{ color: 'black', display: 'flex', alignItems: 'center' }}>
-                <BarChart3 style={{ width: '24px', height: '24px', marginRight: '8px', color: PRIMARY_COLOR }} />
-                Evaluation Result
-            </h3>
-
-            <div className={`level-badge ${getLevelClass(result.performance_level)}`}>
-                Level: {result.performance_level}
-            </div>
-
-            <div className="results-grid">
-                <div className="result-item">
-                    <p className="result-label">Fuzzy Score (0-100)</p>
-                    <p className="result-value font-black" style={{ color: DARK_ACCENT }}>{result.fuzzy_score}</p>
-                </div>
-                <div className="result-item">
-                    <p className="result-label">Attendance</p>
-                    <p className="result-value font-bold" style={{ fontSize: '1.25rem', color: '#1f2937' }}>{evaluationInputs.attendance}%</p>
-                </div>
-                <div className="result-item">
-                    <p className="result-label">Test Score</p>
-                    <p className="result-value font-bold" style={{ fontSize: '1.25rem', color: '#1f2937' }}>{evaluationInputs.test_score}%</p>
-                </div>
-                <div className="result-item">
-                    <p className="result-label">Assignment Score</p>
-                    <p className="result-value font-bold" style={{ fontSize: '1.25rem', color: '#1f2937' }}>{evaluationInputs.assignment_score}%</p>
+        <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                <h3 className="font-bold card-title result-card-title" style={{ margin: 0 }}>
+                    <BarChart3 style={{ width: '24px', height: '24px', marginRight: '8px', color: PALETTE.medium }} />
+                    Evaluation Metrics
+                </h3>
+                <div className={`level-badge ${getLevelClass(result.performance_level)}`} style={{ marginBottom: 0 }}>
+                    {result.performance_level}
                 </div>
             </div>
 
-            <div className="action-button-group">
-                <button
-                    onClick={onGetSuggestion}
-                    className="ai-suggestion-button font-semibold"
-                    disabled={isLoading.suggestion}
-                >
-                    {isLoading.suggestion ? (
-                        <>
-                            <Loader2 style={{ width: '20px', height: '20px', marginRight: '8px' }} className="animate-spin" /> Generating Suggestion...
-                        </>
-                    ) : (
-                        <>
-                            <Bot style={{ width: '20px', height: '20px', marginRight: '8px' }} /> Get AI Suggestion
-                        </>
-                    )}
+            <div className="results-metrics-grid">
+                {/* UPDATED: Added icons to all metric labels */}
+                <div className="metric-item">
+                    <p className="metric-label" style={labelStyle}><Activity size={iconSize}/> Fuzzy Score</p>
+                    <p className="metric-value font-bold">{result.fuzzy_score}</p>
+                </div>
+                <div className="metric-item">
+                    <p className="metric-label" style={labelStyle}><Clock size={iconSize}/> Attendance</p>
+                    <p className="metric-value font-bold">{evaluationInputs.attendance}%</p>
+                </div>
+                <div className="metric-item">
+                    <p className="metric-label" style={labelStyle}><FileText size={iconSize}/> Test</p>
+                    <p className="metric-value font-bold">{evaluationInputs.test_score}%</p>
+                </div>
+                <div className="metric-item">
+                    <p className="metric-label" style={labelStyle}><BookOpen size={iconSize}/> Assignment</p>
+                    <p className="metric-value font-bold">{evaluationInputs.assignment_score}%</p>
+                </div>
+                <div className="metric-item">
+                    <p className="metric-label" style={labelStyle}><ShieldCheck size={iconSize}/> Ethics</p>
+                    <p className="metric-value font-bold">{evaluationInputs.ethics}%</p>
+                </div>
+                <div className="metric-item">
+                    <p className="metric-label" style={labelStyle}><Brain size={iconSize}/> Cognitive & Professionalism</p>
+                    <p className="metric-value font-bold">{evaluationInputs.cognitive}%</p>
+                </div>
+            </div>
+
+            <div className="action-buttons">
+                <button onClick={onGetSuggestion} className="ai-suggest-btn font-semibold" disabled={isLoading.suggestion}>
+                    {isLoading.suggestion ? <><Loader2 className="animate-spin" style={{marginRight:'8px'}}/> AI Thinking...</> : <><Bot style={{marginRight:'8px'}}/> AI Suggestion</>}
                 </button>
-                <button
-                    onClick={onDownloadReport}
-                    className="report-button font-semibold"
-                    disabled={isLoading.report}
-                >
-                    {isLoading.report ? (
-                        <>
-                            <Loader2 style={{ width: '20px', height: '20px', marginRight: '8px' }} className="animate-spin" /> Generating PDF...
-                        </>
-                    ) : (
-                        <>
-                            <Download style={{ width: '20px', height: '20px', marginRight: '8px' }} /> Download Full Report
-                        </>
-                    )}
+                <button onClick={onDownloadReport} className="download-report-btn font-semibold" disabled={isLoading.report}>
+                    {isLoading.report ? <><Loader2 className="animate-spin" style={{marginRight:'8px'}}/> Generating...</> : <><Download style={{marginRight:'8px'}}/> PDF Report</>}
                 </button>
             </div>
         </div>
@@ -264,31 +260,36 @@ const ResultsDisplay = ({ result, onGetSuggestion, onDownloadReport, isLoading, 
 
 const SuggestionDisplay = ({ suggestionText, isLoading, error }) => {
     return (
-        <div className="card-base suggestion-box flex-column full-height" style={{ padding: '24px' }}>
-            <h3 className="font-bold suggestion-title" style={{ color: 'black', display: 'flex', alignItems: 'center' }}>
-                <Bot style={{ width: '20px', height: '20px', marginRight: '8px', color: PRIMARY_COLOR }} />
+        <div className="card-base suggestion-box">
+            {/* 1. Title Box (Header) */}
+            <div className="suggestion-header">
+                <Bot style={{ width: '20px', height: '20px', marginRight: '8px', color: PALETTE.light }} />
                 Personalized AI Suggestion
-            </h3>
-            <div className="suggestion-content">
+            </div>
+
+            {/* 2. Text Box (Content) */}
+            <div className="suggestion-content custom-scrollbar">
                 {isLoading ? (
-                    <div className="flex-center full-height" style={{ color: '#6b7280' }}>
-                        <Loader2 style={{ width: '20px', height: '20px', marginRight: '8px' }} className="animate-spin" />
-                        AI is thinking...
+                    <div className="flex-center full-height" style={{ color: PALETTE.dark, flexDirection: 'column' }}>
+                        <Loader2 style={{ width: '24px', height: '24px', marginBottom: '12px' }} className="animate-spin" />
+                        <p>Analyzing Fuzzy Score...</p>
                     </div>
                 ) : error ? (
-                    <p className="error-text">Error: {error}</p>
+                    <p className="error-text" style={{ color: PALETTE.errorTx }}>Error: {error}</p>
                 ) : suggestionText ? (
-                    <p style={{ whiteSpace: 'pre-wrap' }}>{suggestionText}</p>
+                    <p className="suggestion-text">{suggestionText}</p>
                 ) : (
-                    <p className="placeholder-text italic">Click 'Get AI Suggestion' to generate personalized feedback based on the Fuzzy Score.</p>
+                    <div className="flex-center full-height" style={{ flexDirection: 'column', opacity: 0.5 }}>
+                        <Bot size={48} style={{ marginBottom: '16px' }} />
+                        <p className="placeholder-text" style={{ marginTop: 0 }}>
+                            Click 'AI Suggestion' to generate personalized feedback.
+                        </p>
+                    </div>
                 )}
             </div>
         </div>
     );
 };
-
-
-// --- CHAT COMPONENTS ---
 
 const ChatBox = ({ performanceLevel, evaluationInputs }) => {
     const [messages, setMessages] = useState([]);
@@ -297,7 +298,9 @@ const ChatBox = ({ performanceLevel, evaluationInputs }) => {
     const messagesEndRef = React.useRef(null);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (messages.length > 0 || isTyping) {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
     };
 
     useEffect(scrollToBottom, [messages, isTyping]);
@@ -317,18 +320,15 @@ const ChatBox = ({ performanceLevel, evaluationInputs }) => {
             content: msg.content
         }));
 
-        // --- CONTEXT ENHANCEMENT FIX ---
-        // Concatenate scores into the user's question for context-aware LLM response
         const scoreContext = evaluationInputs ? 
             `My scores are: Attendance=${evaluationInputs.attendance}%, Test=${evaluationInputs.test_score}%, Assignment=${evaluationInputs.assignment_score}%. ` : '';
         
         const currentQuestionWithContext = `${scoreContext}${userMessage.content}`;
-        // -------------------------------
 
         try {
             const payload = {
                 student_performance_level: performanceLevel,
-                question: currentQuestionWithContext, // Use the enriched prompt
+                question: currentQuestionWithContext, 
                 history: chatHistoryForAPI 
             };
             
@@ -355,30 +355,30 @@ const ChatBox = ({ performanceLevel, evaluationInputs }) => {
 
         return (
             <div className={`message-bubble ${alignClass}`}>
-                <div className="message-role" style={{ color: isUser ? SECONDARY_COLOR : DARK_ACCENT }}>{roleName}</div>
-                <div>{message.content}</div>
+                <div className="message-role" style={{ color: isUser ? PALETTE.dark : PALETTE.darkest }}>{roleName}</div>
+                <div style={{ color: PALETTE.darkest }}>{message.content}</div>
             </div>
         );
     };
 
     return (
-        <div className="card-base chat-container full-height">
-            <div className="chat-header" style={{ backgroundColor: DARK_ACCENT }}>
+        <div className="card-base chat-container">
+            <div className="chat-header">
                 <MessageSquare style={{ width: '20px', height: '20px', marginRight: '8px' }} />
                 Chat with Virtual Lecturer
             </div>
             <div className="chat-messages custom-scrollbar">
                 {messages.length === 0 ? (
-                    <div className="text-center" style={{ padding: '40px', color: '#6b7280', fontStyle: 'italic' }}>
+                    <div className="text-center" style={{ padding: '40px', color: PALETTE.dark, fontStyle: 'italic' }}>
                         Ask your lecturer about your evaluation results or suggestions.
-                        <p style={{ marginTop: '8px', fontSize: '0.875rem' }}>Current Level: <span className="font-semibold" style={{ color: PRIMARY_COLOR }}>{performanceLevel || 'N/A'}</span></p>
+                        <p style={{ marginTop: '8px', fontSize: '0.875rem' }}>Current Level: <span className="font-semibold" style={{ color: PALETTE.medium }}>{performanceLevel || 'N/A'}</span></p>
                     </div>
                 ) : (
                     messages.map((msg, index) => <ChatMessage key={index} message={msg} />)
                 )}
                 {isTyping && (
                     <div className="message-bubble message-assistant">
-                        <div className="message-role" style={{ color: DARK_ACCENT }}>Lecturer Bot</div>
+                        <div className="message-role" style={{ color: PALETTE.darkest }}>Lecturer Bot</div>
                         <span className="typing-indicator">
                             <span />
                             <span />
@@ -396,13 +396,11 @@ const ChatBox = ({ performanceLevel, evaluationInputs }) => {
                     placeholder={performanceLevel ? "Ask a question..." : "Run evaluation first to chat..."}
                     className="chat-input"
                     disabled={!performanceLevel || isTyping}
-                    style={{ borderColor: PRIMARY_COLOR }}
                 />
                 <button
                     type="submit"
                     className="chat-action-button"
                     disabled={!performanceLevel || isTyping || !input.trim()}
-                    style={{ backgroundColor: PRIMARY_COLOR }}
                 >
                     <Send style={{ width: '20px', height: '20px' }} />
                 </button>
@@ -420,32 +418,46 @@ const ChatBox = ({ performanceLevel, evaluationInputs }) => {
 };
 
 
-// --- MAIN APP COMPONENT (Single Page Logic) ---
+// --- MAIN APP COMPONENT ---
 
 const App = () => {
-    // Evaluation State
+    // State
     const [evaluationResult, setEvaluationResult] = useState(null);
+    const [hasRunEvaluation, setHasRunEvaluation] = useState(false);
     const [evaluationInputs, setEvaluationInputs] = useState({
         attendance: 80,
         test_score: 75,
         assignment_score: 90,
+        ethics: 85,
+        cognitive: 70
     });
     const [aiSuggestion, setAiSuggestion] = useState('');
     const [isLoading, setIsLoading] = useState({ evaluate: false, suggestion: false, report: false });
     const [error, setError] = useState(null);
 
+    const rightPanelRef = React.useRef(null);
+    const suggestionRef = React.useRef(null);
+
     const handleEvaluate = useCallback(async (inputs) => {
         setError(null);
         setIsLoading(prev => ({ ...prev, evaluate: true }));
         setAiSuggestion('');
-
+        
         try {
-            const result = await callEvaluate(inputs);
+            // 1. Call API (Remote) - Logic is now entirely on backend
+            const result = await callEvaluate(inputs); 
+            
             setEvaluationResult(result);
-            setEvaluationInputs(inputs); 
+            setEvaluationInputs(inputs);
+            setHasRunEvaluation(true);
+
+            setTimeout(() => {
+                rightPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+
         } catch (err) {
+            console.error("CRITICAL ERROR:", err);
             setError(`Evaluation failed: ${err.message}`);
-            console.error("Evaluation API Error:", err);
         } finally {
             setIsLoading(prev => ({ ...prev, evaluate: false }));
         }
@@ -454,6 +466,10 @@ const App = () => {
     const handleGetSuggestion = useCallback(async () => {
         if (!evaluationInputs) return;
         
+        setTimeout(() => {
+            suggestionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+
         setError(null);
         setIsLoading(prev => ({ ...prev, suggestion: true }));
         setAiSuggestion('');
@@ -486,101 +502,178 @@ const App = () => {
     const performanceLevel = evaluationResult?.performance_level || null;
     const words = ["Performance", "Future", "Potential", "Success"];
 
-    // Function to handle scrolling to the evaluation section
     const scrollToEvaluation = () => {
         document.getElementById('evaluation-section').scrollIntoView({ behavior: 'smooth' });
     };
 
     return (
-        <div className="app-container">
+        <div className="app-container">                
             
-            {/* 1. HOMEPAGE SECTION (Header) */}
+            {/* 1. HOMEPAGE HERO */}
             <div className="homepage-section">
-                <div className="relative" style={{ zIndex: 10 }}>
-                    <div className="text-center" style={{ maxWidth: '960px' }}>
-                        <h1 className="homepage-title font-black">
-                            Unlock Student <FlipText words={words} />
+                
+                <div className="bg-pattern"></div>
+
+                <div className="max-width-container">
+                    
+                    {/* LEFT SIDE: Text & CTA */}
+                    <div style={{ textAlign: 'left' }}>
+                        <div className="pill-badge">
+                            <Sparkles size={16} style={{ color: PALETTE.light, marginRight: '8px' }} />
+                            <span className="pill-text">AI-POWERED FUZZY LOGIC</span>
+                        </div>
+                        
+                        <h1 className="hero-title font-black">
+                            Unlock Student <br />
+                            <FlipText words={words} />
                         </h1>
-                        <p className="homepage-subtitle font-light">
-                            A cutting-edge evaluation system using **Fuzzy Logic** and **Local LLMs** to provide precise, personalized academic insights.
+                        
+                        <p className="hero-subtitle font-light">
+                            Go beyond simple grades. Evaluate <strong>Cognitive</strong>, <strong>Ethical</strong>, and <strong>Academic</strong> traits to reveal the true potential of every student.
                         </p>
-                        <button
-                            onClick={scrollToEvaluation}
-                            className="homepage-button font-bold"
-                        >
-                            <BarChart3 style={{ width: '20px', height: '20px', marginRight: '8px' }} /> Start Performance Evaluation
-                        </button>
+
+                        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                            <button 
+                                onClick={scrollToEvaluation} 
+                                className="homepage-button font-bold" 
+                            >
+                                <BarChart3 style={{ width: '20px', height: '20px', marginRight: '8px' }} /> 
+                                Start Evaluation
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* RIGHT SIDE: Visual Composition */}
+                    <div className="visual-container">
+                        <div className="central-circle">
+                            <GraduationCap size={80} style={{ color: PALETTE.light }} />
+                        </div>
+
+                        <div className="floating-card" style={{ top: '10%', left: '0%', animationDelay: '0s' }}>
+                            <div className="floating-icon-box"><Brain size={20} color="white"/></div>
+                            <div>
+                                <div className="floating-label">PARAMETER</div>
+                                <div className="floating-value">Cognitive & Professionalism</div>
+                            </div>
+                        </div>
+
+                        <div className="floating-card" style={{ top: '20%', right: '0%', animationDelay: '1s', animationDuration: '5s' }}>
+                            <div className="floating-icon-box"><ShieldCheck size={20} color="white"/></div>
+                            <div>
+                                <div className="floating-label">PARAMETER</div>
+                                <div className="floating-value">Ethics</div>
+                            </div>
+                        </div>
+
+                        <div className="floating-card" style={{ bottom: '20%', left: '5%', animationDelay: '0.5s', animationDuration: '7s' }}>
+                            <div className="floating-icon-box"><Clock size={20} color="white"/></div>
+                            <div>
+                                <div className="floating-label">PARAMETER</div>
+                                <div className="floating-value">Attendance</div>
+                            </div>
+                        </div>
+
+                        <div className="floating-card" style={{ bottom: '10%', right: '10%', animationDelay: '1.5s', animationDuration: '8s' }}>
+                            <div className="floating-icon-box"><BookOpen size={20} color="white"/></div>
+                            <div>
+                                <div className="floating-label">PARAMETER</div>
+                                <div className="floating-value">Academics</div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
+
                 <div className="scroll-indicator" onClick={scrollToEvaluation}>
-                    <span style={{ fontSize: '0.875rem', fontWeight: '600', marginBottom: '4px' }}>Scroll to Evaluate</span>
-                    <ChevronDown style={{ width: '32px', height: '32px' }} />
+                    <span className="scroll-text">Scroll to Start</span>
+                    <ChevronDown style={{ width: '24px', height: '24px' }} />
                 </div>
             </div>
 
-            {/* 2. EVALUATION SECTION (Main Content) */}
+            {/* 2. SPLIT DASHBOARD SECTION */}
             <div id="evaluation-section" className="evaluation-section">
-                <div className="max-width-container">
-                    <h2 className="page-title font-extrabold" style={{ color: DARK_ACCENT }}>
-                        Student Performance Dashboard
-                    </h2>
-
+                <div className="content-wrapper">
+                    
                     {error && (
-                        <div className="card-base error-message-box" style={{ backgroundColor: '#fee2e2', border: '1px solid #f87171', color: '#991b1b', fontWeight: '500', textAlign: 'center' }}>
-                            <p>Connection Error: {error}</p>
-                            <p className="error-message-detail">Ensure your FastAPI backend is running at <code>http://localhost:8000</code>.</p>
+                        <div className="error-message-box" style={{marginBottom: '24px'}}>
+                            <p>Error: {error}</p>
                         </div>
                     )}
 
-                    {/* Evaluation Form and Results */}
-                    <div className="main-grid-2-cols" style={{ marginBottom: '48px' }}>
-                        <EvaluationForm
-                            onEvaluate={handleEvaluate}
-                            isLoading={isLoading.evaluate}
-                            inputs={evaluationInputs}
-                            setInputs={setEvaluationInputs}
-                        />
-                        <ResultsDisplay
-                            result={evaluationResult}
-                            evaluationInputs={evaluationInputs}
-                            onGetSuggestion={handleGetSuggestion}
-                            onDownloadReport={handleDownloadReport}
-                            isLoading={isLoading}
-                        />
-                    </div>
-
-                    <div style={{ marginTop: '48px', marginBottom: '48px' }}>
-                        <h2 className="font-bold card-title" style={{ color: 'black', marginBottom: '16px' }}>
-                            Visual Inference Engine
-                        </h2>
-
-                        {/* Pass the whole inputs object and the result object */}
-                        <FuzzyGraph 
-                            inputs={evaluationInputs} 
-                            result={evaluationResult} 
-                        />
-                    </div>
-
-                    {/* Suggestion and Chat */}
-                    <div className="main-grid-5-cols chat-suggestion-area">
-                        <div className="suggestion-container full-height">
-                            <SuggestionDisplay
-                                suggestionText={aiSuggestion}
-                                isLoading={isLoading.suggestion}
-                                error={error}
-                            />
+                    <div className="split-layout">
+                        
+                        {/* --- LEFT PANEL: INPUTS --- */}
+                        <div className="left-panel">
+                            {/* FIX: Removed inline style to use CSS white background */}
+                            <div className="input-card card-base">
+                                <EvaluationForm
+                                    onEvaluate={handleEvaluate}
+                                    isLoading={isLoading.evaluate}
+                                    inputs={evaluationInputs}
+                                    setInputs={setEvaluationInputs}
+                                    graphConfig={GRAPH_CONFIG}
+                                />
+                            </div>
                         </div>
-                        <div className="chat-container-wrapper full-height">
-                            {/* Passing evaluationInputs to ChatBox */}
-                            <ChatBox 
-                                performanceLevel={performanceLevel} 
-                                evaluationInputs={evaluationInputs}
-                            />
+
+                        {/* --- RIGHT PANEL: RESULTS --- */}
+                        <div className="right-panel" ref={rightPanelRef}>
+                            
+                            {!hasRunEvaluation ? (
+                                /* EMPTY STATE */
+                                <div className="empty-state-card">
+                                    <BarChart3 size={64} style={{ opacity: 0.3, marginBottom: '24px' }} />
+                                    <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Ready to Evaluate</h3>
+                                    <p>Adjust the parameters on the left and click <strong>Run Evaluation</strong> to see the Fuzzy Logic analysis here.</p>
+                                </div>
+                            ) : (
+                                /* ACTIVE STATE */
+                                <div className="fade-in-anim" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                    
+                                    {/* 1. TOP: OUTPUT GRAPH */}
+                                    <div className="results-card">
+                                        <FuzzyOutputGraph result={evaluationResult} />
+                                    </div>
+
+                                    {/* 2. MIDDLE: METRICS & BUTTONS */}
+                                    <div className="results-card">
+                                        <ResultsDisplay
+                                            result={evaluationResult}
+                                            evaluationInputs={evaluationInputs}
+                                            onGetSuggestion={handleGetSuggestion}
+                                            onDownloadReport={handleDownloadReport}
+                                            isLoading={isLoading}
+                                        />
+                                    </div>
+
+                                    {/* 3. BOTTOM: ACTIVE RULES */}
+                                    {/* Added 'results-card' for width alignment and 'flex: 1' to stretch vertically */}
+                                    <div className="results-card" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                        <ActiveRulesList rules={evaluationResult?.rules_triggered || []} />
+                                    </div>
+
+                                </div>
+                            )}
+
                         </div>
                     </div>
+
+                    {/* 3. BOTTOM CONTENT (Chat & Suggestions) */}
+                    {hasRunEvaluation && (
+                        <div className="fade-in-anim" style={{ marginTop: '40px' }} ref={suggestionRef}>
+                            <div className="bottom-row-grid">
+                                <div className="full-height">
+                                    <SuggestionDisplay suggestionText={aiSuggestion} isLoading={isLoading.suggestion} error={error} />
+                                </div>
+                                <div className="full-height">
+                                    <ChatBox performanceLevel={performanceLevel} evaluationInputs={evaluationInputs} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                 </div>
             </div>
-
         </div>
     );
 };
